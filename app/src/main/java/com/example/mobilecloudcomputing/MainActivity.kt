@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity(), UserAdapter.OnItemClickListener {
         rv_users.adapter = adapter
 
         // call "fetchUsers" function
-        //fetchUsers()
+        fetchUsers()
 
         // "for swipe to refresh" refresh the data when user swipe down
         mSwipeRefreshLayout.setOnRefreshListener {
@@ -45,55 +45,50 @@ class MainActivity : AppCompatActivity(), UserAdapter.OnItemClickListener {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // call "fetchUsers" function
-        fetchUsers()
+    // when user click on "delete" icon delete the user
+    override fun onDeleteClick(position: Int) {
+        // call "deleteUser" function
+        deleteUser(data[position].id)
     }
 
     // this function to get all users from database
     private fun fetchUsers() {
         db.collection("users")
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                // clear the "data" array before fetching the data
-                data.clear()
-                for (document in querySnapshot)
+            .addSnapshotListener { querySnapshot, exception ->
+                if (exception == null)
                 {
-                    // get user data from database
-                    val id = document.id
-                    val name = document.data["name"] as String
-                    val number = document.data["number"] as String
-                    val address = document.data["address"] as String
+                    // clear the "data" array before fetching the users
+                    data.clear()
+                    querySnapshot!!.documents.forEach { userInfo ->
+                        // get user data from database
+                        val id = userInfo.id
+                        val name = userInfo.data!!["name"].toString()
+                        val number = userInfo.data!!["number"].toString()
+                        val address = userInfo.data!!["address"].toString()
 
-                    // store the user data in a variable of type "User"
-                    val user = User(id, name, number, address)
+                        // store the user data in a variable of type "User"
+                        val user = User(id, name, number, address)
 
-                    // add the user info to "data" array list
-                    data.add(0, user)
-                }
-                // notify the adapter
-                adapter.notifyDataSetChanged()
+                        // add the user info to "data" array list
+                        data.add(0, user)
+                    }
+                    // notify the adapter
+                    adapter.notifyDataSetChanged()
 
-                // if the array is empty show "txtNoUsers" text view
-                if (data.isEmpty())
-                {
-                    txtNoUsers.visibility = View.VISIBLE // show the txtNoUsers
-                    progressBar.visibility = View.GONE   // hide the progressBar
+                    // if the array is empty show "txtNoUsers" text view
+                    if (data.isEmpty())
+                    {
+                        txtNoUsers.visibility = View.VISIBLE // show the txtNoUsers
+                        progressBar.visibility = View.GONE   // hide the progressBar
+                    } else {
+                        mSwipeRefreshLayout.isRefreshing = false // stop refreshing
+                        progressBar.visibility = View.GONE // hide the progressBar
+                        txtNoUsers.visibility = View.GONE  // hide the txtNoUsers
+                    }
                 } else {
-                    mSwipeRefreshLayout.isRefreshing = false // stop refreshing
-                    progressBar.visibility = View.GONE // hide the progressBar
-                    txtNoUsers.visibility = View.GONE  // hide the txtNoUsers
+                    Toast.makeText(this, "An error occurs", Toast.LENGTH_SHORT).show()
                 }
             }
-            .addOnFailureListener { exception ->
-                Log.e(TAG, exception.message!!)
-            }
-    }
-
-    // when user click on "delete" icon delete the user
-    override fun onDeleteClick(position: Int) {
-        deleteUser(data[position].id)
     }
 
     // this function to delete user by id from database
@@ -103,8 +98,6 @@ class MainActivity : AppCompatActivity(), UserAdapter.OnItemClickListener {
             .addOnSuccessListener {
                 // show a message for the user
                 Toast.makeText(this, "User Deleted Successfully", Toast.LENGTH_SHORT).show()
-                // get users again after deleting any user
-                fetchUsers()
             }
             .addOnFailureListener { exception ->
                 Log.e(TAG, exception.message!!)

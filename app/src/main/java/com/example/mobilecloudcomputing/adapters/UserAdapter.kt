@@ -12,7 +12,7 @@ import kotlinx.android.synthetic.main.user_item.view.*
 class UserAdapter(
         private var context: Context,
         private var data: ArrayList<User>,
-        var click: OnItemClickListener
+        private var click: OnItemClickListener
 ) : RecyclerView.Adapter<UserAdapter.UserViewHolder>() {
 
     class UserViewHolder(view: View) : RecyclerView.ViewHolder(view) {
